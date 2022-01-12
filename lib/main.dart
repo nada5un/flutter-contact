@@ -4,11 +4,21 @@ void main() {
   runApp(MyApp());
 }
 
+//stful : 스테이트 만들기
 //stless
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   MyApp({Key? key}) : super(key: key);
 
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
   var a = 1;
+  var nameList = [
+    "홍길동","길동","길길"
+  ];
+  var likesList = [0,0,0];
 
   @override
   Widget build(BuildContext context) {
@@ -16,20 +26,24 @@ class MyApp extends StatelessWidget {
       //lp 단위
       //상중하로 나눔
       home: Scaffold(
-        floatingActionButton: FloatingActionButton(
-          child: Text(a.toString()),
-          onPressed: (){
-            a+=1;
-          },
-        ),
-        appBar: AppBar(title:Text("앱임")),
+        appBar: AppBar(title:Text("연락처앱")),
         //목록
         body: ListView.builder(
-          itemCount: 3,
+          itemCount: nameList.length,
           itemBuilder: (c,i){
             return ListTile(
-                leading: Image.asset("icon_no_child.png", height: 50,),
-                title: Text("홍길동")
+                leading: Text(likesList[i].toString()),
+                title: Text(nameList[i].toString()),
+                trailing :
+                TextButton(
+                  child: Text("좋아요"),
+                  //setState 해줘야 반영됨
+                  onPressed: (){
+                      setState(() {
+                        likesList[i]++;
+                      });
+                  },
+                ),
             );
           },
         ),
