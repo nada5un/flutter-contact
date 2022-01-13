@@ -17,43 +17,51 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  var total = 3;
   var nameList = [
     "홍길동","길동","길길"
   ];
   var likesList = [0,0,0];
+  var phoneList = ["010-4195-5964","010-3030-4444","010-4555-2222"];
 
-  addA()=>setState((){
-    total++;
+  deleteName(index)=>setState((){
+    print(index);
+    nameList.removeAt(index);
+    phoneList.removeAt(index);
   });
 
   appendName(String name)=>setState((){
-      print(name);
       nameList.add(name);
+  });
+
+  appendPhone(String phone)=>setState((){
+      phoneList.add(phone);
   });
 
   @override
   //context: 족보
   build(context) {
     return Scaffold(
-        appBar: AppBar(title:Text(total.toString())),
+        appBar: AppBar(title:Text("연락처 앱")),
         //목록
         body: ListView.builder(
           itemCount: nameList.length,
           itemBuilder: (c,i){
             return ListTile(
                 leading: Image.asset('icon_no_child.png'),
-                title: Text(nameList[i].toString()),
-                // trailing :
-                // TextButton(
-                //   child: Text("좋아요"),
-                //   //setState 해줘야 반영됨
-                //   onPressed: (){
-                //       setState(() {
-                //         likesList[i]++;
-                //       });
-                //   },
-                // ),
+                title: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(nameList[i].toString()),
+                      Text(phoneList[i].toString())
+                    ]),
+                trailing :
+                TextButton(
+                  child: Text("삭제"),
+                  //setState 해줘야 반영됨
+                  onPressed: (){
+                      deleteName(i);
+                  },
+                ),
             );
           },
         ),
@@ -62,7 +70,11 @@ class _MyAppState extends State<MyApp> {
           onPressed: (){
             // print(context.findAncestorWidgetOfExactType<MaterialApp>());
             showDialog(context: context, builder: (context){
-              return DialogUI(name:nameList,total:total,addA:addA,appendName:appendName);
+              return DialogUI(
+                  name:nameList,
+                  appendName:appendName,
+                  appendPhone:appendPhone
+              );
             });
           },
         ),
@@ -117,19 +129,17 @@ class DialogUI extends StatefulWidget {
   DialogUI({
     Key? key,
     this.name,
-    this.total,
-    required this.addA,
-    required this.appendName
+    required this.appendName,
+    required this.appendPhone
   }) : super(key: key);
 
   //부모에서 온 값은 read-only가 좋음
   final name;
-  final total;
   var inputData = TextEditingController();
   var inputData2 = '';
 
-  final Function() addA;
   final Function(String name) appendName;
+  final Function(String phone) appendPhone;
 
   @override
   State<DialogUI> createState() => _DialogUIState();
@@ -143,13 +153,21 @@ class _DialogUIState extends State<DialogUI> {
           borderRadius: BorderRadius.circular(10.0)
       ),
       title: Text("Contact"),
-      content: TextField(
-        // onChanged: (text) {
-        //   widget.inputData2 = text;
-        //   print(text);
-        // },
-        controller: widget.inputData,
-        decoration: InputDecoration(hintText: "Text Field in Dialog"),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: widget.inputData,
+            decoration: InputDecoration(hintText: "이름"),
+          ),
+          TextField(
+            onChanged: (text){
+              widget.inputData2 = text;
+            },
+            decoration: InputDecoration(hintText: "전화번호"),
+          )
+        ],
+
       ),
       actions: [
         TextButton(onPressed: (){
@@ -159,9 +177,11 @@ class _DialogUIState extends State<DialogUI> {
             child: Text("취소")
         ),
         TextButton(onPressed: (){
-          widget.appendName(widget.inputData.text);
-          widget.addA();
-          Navigator.pop(context);
+          if(widget.inputData.text.isNotEmpty && widget.inputData2.isNotEmpty){
+            widget.appendName(widget.inputData.text);
+            widget.appendPhone(widget.inputData2);
+            Navigator.pop(context);
+          }
         },
             child: Text("완료")
         )
