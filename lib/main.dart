@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import "package:permission_handler/permission_handler.dart";
+import "package:contacts_service/contacts_service.dart";
 
 void main() {
   runApp(
@@ -17,9 +19,26 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  var nameList = [
-    "홍길동","길동","길길"
-  ];
+
+  getPermission() async{
+    var status = await Permission.contacts.status;
+    if (status.isGranted) {
+      print('허락됨');
+      var contacts = await ContactsService.getContacts();
+      print(contacts);
+      setState(() {
+        nameList = [...contacts];
+      });
+      // print(contacts[0].displayName);
+
+
+    } else if (status.isDenied) {
+      print('거절됨');
+      Permission.contacts.request();
+    }
+  }
+
+  var nameList = [];
   var likesList = [0,0,0];
   var phoneList = ["010-4195-5964","010-3030-4444","010-4555-2222"];
 
@@ -29,8 +48,13 @@ class _MyAppState extends State<MyApp> {
     phoneList.removeAt(index);
   });
 
-  appendName(String name)=>setState((){
-      nameList.add(name);
+  appendName(String familyName,String name)=>setState((){
+    var newPerson = Contact();
+    newPerson.familyName = familyName;
+    newPerson.givenName = name;
+    newPerson.displayName = familyName+name;
+    nameList.add(newPerson);
+    ContactsService.addContact(newPerson);
   });
 
   appendPhone(String phone)=>setState((){
@@ -41,28 +65,28 @@ class _MyAppState extends State<MyApp> {
   //context: 족보
   build(context) {
     return Scaffold(
-        appBar: AppBar(title:Text("연락처 앱")),
+        appBar: AppBar(title:Text("연락처 앱"),actions: [
+          IconButton(onPressed: (){
+            getPermission();
+          }, icon: Icon(Icons.contacts))
+        ],),
         //목록
         body: ListView.builder(
+          padding: EdgeInsets.fromLTRB(5, 10, 0, 20),
           itemCount: nameList.length,
           itemBuilder: (c,i){
             return ListTile(
-                leading: Image.asset('icon_no_child.png'),
-                title: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(nameList[i].toString()),
-                      Text(phoneList[i].toString())
-                    ]),
+                leading: Image.asset('assets/icon_no_child.png'),
+                title: Text(nameList[i].displayName),
                 trailing :
-                TextButton(
-                  child: Text("삭제"),
-                  //setState 해줘야 반영됨
-                  onPressed: (){
-                      deleteName(i);
-                  },
-                ),
-            );
+                  TextButton(
+                    child: Text("삭제"),
+                    //setState 해줘야 반영됨
+                    onPressed: (){
+                        deleteName(i);
+                    },
+                  ),
+              );
           },
         ),
         floatingActionButton: FloatingActionButton(
@@ -137,8 +161,9 @@ class DialogUI extends StatefulWidget {
   final name;
   var inputData = TextEditingController();
   var inputData2 = '';
+  var inputData3 = '';
 
-  final Function(String name) appendName;
+  final Function(String familyName,String name) appendName;
   final Function(String phone) appendPhone;
 
   @override
@@ -156,6 +181,12 @@ class _DialogUIState extends State<DialogUI> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          TextField(
+            onChanged: (text){
+              widget.inputData3 = text;
+            },
+            decoration: InputDecoration(hintText: "성"),
+          ),
           TextField(
             controller: widget.inputData,
             decoration: InputDecoration(hintText: "이름"),
@@ -177,9 +208,9 @@ class _DialogUIState extends State<DialogUI> {
             child: Text("취소")
         ),
         TextButton(onPressed: (){
-          if(widget.inputData.text.isNotEmpty && widget.inputData2.isNotEmpty){
-            widget.appendName(widget.inputData.text);
-            widget.appendPhone(widget.inputData2);
+          if(widget.inputData.text.isNotEmpty){
+            widget.appendName(widget.inputData3,widget.inputData.text);
+            // widget.appendPhone(widget.inputData2);
             Navigator.pop(context);
           }
         },
